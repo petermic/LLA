@@ -18,11 +18,9 @@
 
 #include <boost/optional.hpp>
 #include <boost/variant.hpp>
-
-#include <ReadoutCard/CardFinder.h>
-#include <ReadoutCard/Parameters.h>
-
-namespace roc = AliceO2::roc;
+#include <boost/algorithm/string.hpp>
+#include "Lla/rocException.h"
+#include "Lla/commonExceptions.h"
 
 namespace o2
 {
@@ -32,9 +30,21 @@ namespace lla
 class CardIdVisitor : public boost::static_visitor<int>
 {
  public:
-  int operator()(const char* s) const { return roc::findCard(std::string(s)).sequenceId; };
-  int operator()(std::string s) const { return roc::findCard(s).sequenceId; };
-  int operator()(roc::Parameters::CardIdType cardId) const { return roc::findCard(cardId).sequenceId; };
+  int operator()(const char* s) const { 
+    std::string st = std::string(s);
+    boost::erase_all(st,"#");
+    int id = std::stoi(st);
+    if(id<0 || id>7) BOOST_THROW_EXCEPTION(AliceO2::roc::ParseException()
+                          << AliceO2::Common::ErrorInfo::Message("Parsing PCI sequence number failed"));
+    return id; 
+  };
+  int operator()(std::string s) const { 
+    boost::erase_all(s,"#");
+    int id = std::stoi(s);
+    if(id<0 || id>7) BOOST_THROW_EXCEPTION(AliceO2::roc::ParseException()
+                          << AliceO2::Common::ErrorInfo::Message("Parsing PCI sequence number failed"));
+    return id;
+  };
 };
 
 struct ParametersPimpl;
@@ -56,7 +66,7 @@ class SessionParameters
   using SessionNameType = std::string;
 
   /// Type for the CardId
-  using CardIdType = boost::variant<const char*, std::string, roc::Parameters::CardIdType>;
+  using CardIdType = boost::variant<const char*, std::string>;// roc::Parameters::CardIdType>;
 
   // Setters
 

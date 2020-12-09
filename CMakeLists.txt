@@ -43,6 +43,8 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   )
 endif()
 
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+
 ####################################
 # Dependencies
 ####################################
@@ -58,9 +60,8 @@ else()
   set(boost_python_component "python27")
 endif()
 
-find_package(Common REQUIRED)
 find_package(InfoLogger REQUIRED)
-find_package(ReadoutCard REQUIRED)
+find_package(Threads REQUIRED)
 find_package(Boost 1.5.6
   COMPONENTS
   unit_test_framework
@@ -76,6 +77,7 @@ add_library(LLA SHARED
   src/InterprocessLockFactory.cxx
   src/Session.cxx
   src/SessionParameters.cxx
+  src/commonException.cxx
 )
 
 target_sources(LLA PRIVATE
@@ -95,9 +97,7 @@ target_include_directories(LLA
 )
 
 set(LINK_LIBS
-  AliceO2::ReadoutCard
   AliceO2::InfoLogger
-  AliceO2::Common
   Boost::boost
 )
 
@@ -110,6 +110,7 @@ target_link_libraries(LLA
     $<$<BOOL:${Python2_FOUND}>:Python2::Python>
     $<$<BOOL:${Python3_FOUND}>:Boost::python${Python3_VERSION_MAJOR}${Python3_VERSION_MINOR}>
     $<$<BOOL:${Python3_FOUND}>:Python3::Python>
+    Threads::Threads
 )
 
 set_target_properties(LLA
@@ -149,6 +150,7 @@ foreach (test ${TEST_SRCS})
     PRIVATE
       LLA
       Boost::unit_test_framework
+      Threads::Threads
   )
   add_test(NAME ${test_name} COMMAND ${test_name})
   set_tests_properties(${test_name} PROPERTIES TIMEOUT 15) # TODO: WHAT IS THIS?
@@ -174,7 +176,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   foreach(i RANGE ${count})
     list(GET EXE_SRCS ${i} src)
     list(GET EXE_NAMES ${i} name)
-    add_executable(${name} apps/${src})
+    # add_executable(${name} apps/${src})
     target_include_directories(${name}
       PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src

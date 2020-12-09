@@ -13,7 +13,7 @@
 ///
 /// \author Kostas Alexopoulos (kostas.alexopoulos@cern.ch)
 
-#include "ReadoutCard/Exception.h"
+#include "Lla/rocException.h"
 
 #include "Lla/Exception.h"
 #include "Lla/Session.h"
@@ -105,7 +105,7 @@ void Session::checkAndSetParameters()
 
   try {
     mCardId = boost::apply_visitor(CardIdVisitor(), mParams.getCardIdRequired());
-  } catch (const roc::Exception& e) {
+  } catch (const AliceO2::roc::Exception& e) {
     BOOST_THROW_EXCEPTION(ParameterException() << ErrorInfo::Message(e.what()));
   }
 }
