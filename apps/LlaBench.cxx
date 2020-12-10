@@ -335,7 +335,7 @@ class LlaBench : public AliceO2::Common::Program
 
     for (int i = 0; i < times; i++) {
       bar->writeRegister(sc_regs::SWT_WR_WORD_H, wrHigh);
-      bar->writeRegister(sc_regs::SWT_WR_WORD_M, wrMed);
+//      bar->writeRegister(sc_regs::SWT_WR_WORD_M, wrMed);
       bar->writeRegister(sc_regs::SWT_WR_WORD_L, wrLow);
 
       bar->readRegister(sc_regs::SWT_MON);
@@ -359,7 +359,7 @@ class LlaBench : public AliceO2::Common::Program
       bar->writeRegister(sc_regs::SWT_CMD, 0x0);
 
       uint32_t rdLow = bar->readRegister(sc_regs::SWT_RD_WORD_L);
-      uint32_t rdMed = bar->readRegister(sc_regs::SWT_RD_WORD_M);
+//      uint32_t rdMed = bar->readRegister(sc_regs::SWT_RD_WORD_M);
       uint32_t rdHigh = bar->readRegister(sc_regs::SWT_RD_WORD_H);
 
       if (rdLow != wrLow || rdMed != wrMed || (rdHigh & 0xfff) != (wrHigh & 0xfff)) {
