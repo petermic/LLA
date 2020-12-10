@@ -18,9 +18,7 @@
 
 #include <boost/optional.hpp>
 #include <boost/variant.hpp>
-#include <boost/algorithm/string.hpp>
-#include "Lla/rocException.h"
-#include "Lla/commonExceptions.h"
+#include "ParameterTypes/CardId.h"
 
 namespace o2
 {
@@ -32,18 +30,10 @@ class CardIdVisitor : public boost::static_visitor<int>
  public:
   int operator()(const char* s) const { 
     std::string st = std::string(s);
-    boost::erase_all(st,"#");
-    int id = std::stoi(st);
-    if(id<0 || id>7) BOOST_THROW_EXCEPTION(AliceO2::roc::ParseException()
-                          << AliceO2::Common::ErrorInfo::Message("Parsing PCI sequence number failed"));
-    return id; 
+    return cardIdFromString(st);
   };
   int operator()(std::string s) const { 
-    boost::erase_all(s,"#");
-    int id = std::stoi(s);
-    if(id<0 || id>7) BOOST_THROW_EXCEPTION(AliceO2::roc::ParseException()
-                          << AliceO2::Common::ErrorInfo::Message("Parsing PCI sequence number failed"));
-    return id;
+    return cardIdFromString(s);
   };
 };
 

@@ -32,7 +32,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_INSTALL_LIBDIR lib)
 
 # Used only for debugging
-# set(CMAKE_BUILD_TYPE "Debug")
+set(CMAKE_BUILD_TYPE "Debug")
 
 # Set the default build type to "RelWithDebInfo"
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
@@ -60,11 +60,14 @@ else()
   set(boost_python_component "python27")
 endif()
 
+find_package(FELIXwrapper REQUIRED)
 find_package(InfoLogger REQUIRED)
 find_package(Threads REQUIRED)
 find_package(Boost 1.5.6
   COMPONENTS
   unit_test_framework
+  program_options
+  filesystem
   ${boost_python_component}
   REQUIRED
 )
@@ -78,6 +81,8 @@ add_library(LLA SHARED
   src/Session.cxx
   src/SessionParameters.cxx
   src/commonException.cxx
+  src/commonProgram.cxx
+  src/commonSystem.cxx
 )
 
 target_sources(LLA PRIVATE
@@ -92,13 +97,18 @@ target_include_directories(LLA
   PUBLIC
     $<INSTALL_INTERFACE:include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
 set(LINK_LIBS
   AliceO2::InfoLogger
+  AliceO2::FELIXwrapper
   Boost::boost
+  Boost::program_options
+  Boost::filesystem
+  Threads::Threads
 )
 
 # Link targets
@@ -110,7 +120,6 @@ target_link_libraries(LLA
     $<$<BOOL:${Python2_FOUND}>:Python2::Python>
     $<$<BOOL:${Python3_FOUND}>:Boost::python${Python3_VERSION_MAJOR}${Python3_VERSION_MINOR}>
     $<$<BOOL:${Python3_FOUND}>:Python3::Python>
-    Threads::Threads
 )
 
 set_target_properties(LLA
@@ -176,7 +185,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   foreach(i RANGE ${count})
     list(GET EXE_SRCS ${i} src)
     list(GET EXE_NAMES ${i} name)
-    # add_executable(${name} apps/${src})
+    add_executable(${name} apps/${src})
     target_include_directories(${name}
       PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src

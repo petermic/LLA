@@ -19,10 +19,10 @@
 #include <thread>
 #include <unordered_map>
 
-#include "Common/Program.h"
-#include "ReadoutCard/CardDescriptor.h"
-#include "ReadoutCard/ChannelFactory.h"
-#include "ReadoutCard/Cru.h"
+#include "Lla/commonProgram.h"
+#include "FELIXwrapper/CardInterface.h"
+#include "FELIXwrapper/BarInterface.h"
+#include "FELIXwrapper/registers.h"
 #include "Lla/Lla.h"
 
 namespace roc = AliceO2::roc;
@@ -237,12 +237,15 @@ class LlaBench : public AliceO2::Common::Program
                                  .setSessionName(mOptions.sessionName)
                                  .setCardId(mOptions.cardId);
     std::unique_ptr<Session> session = std::make_unique<Session>(params, lockType); // Class constructor only availabe when O2_LLA_BENCH_ENABLED is defined
-
+    
+    int id = cardIdFromString(mOptions.cardId);
+    std::shared_ptr<roc::CardInterface> card = std::make_shared<roc::CardInterface>(id,0x0);
+    
     std::shared_ptr<roc::BarInterface> bar0, bar2;
     if (mOptions.simpleCritical) {
-      bar0 = roc::ChannelFactory().getBar(roc::Parameters::cardIdFromString(mOptions.cardId), 0);
+      bar0 = std::make_shared<roc::BarInterface>(card,2);
     } else {
-      bar2 = roc::ChannelFactory().getBar(roc::Parameters::cardIdFromString(mOptions.cardId), 2);
+      bar2 = std::make_shared<roc::BarInterface>(card,2);
     }
 
     while ((!timeExceeded() || runForever) && !isSigInt()) {
@@ -276,11 +279,12 @@ class LlaBench : public AliceO2::Common::Program
     long long ret = 0;
     std::chrono::high_resolution_clock::time_point start, stop;
 
+    std::shared_ptr<roc::CardInterface> card = std::make_shared<roc::CardInterface>(cardIdFromString(mOptions.cardId),0x0);
     std::shared_ptr<roc::BarInterface> bar0, bar2;
     if (mOptions.simpleCritical) {
-      bar0 = roc::ChannelFactory().getBar(roc::Parameters::cardIdFromString(mOptions.cardId), 0);
+      bar2 = std::make_shared<roc::BarInterface>(card,2); // TODO: switch to BAR0?
     } else {
-      bar2 = roc::ChannelFactory().getBar(roc::Parameters::cardIdFromString(mOptions.cardId), 2);
+      bar2 = std::make_shared<roc::BarInterface>(card,2);
     }
 
     while ((!timeExceeded() || runForever) && !isSigInt()) {
@@ -288,7 +292,7 @@ class LlaBench : public AliceO2::Common::Program
       start = std::chrono::high_resolution_clock::now();
 
       if (mOptions.simpleCritical) {
-        criticalSimple(bar0, 0x0badf00d);
+        criticalSimple(bar2, 0x0badf00d);
       } else {
         criticalSwt(bar2, mOptions.operations);
       }
@@ -321,20 +325,20 @@ class LlaBench : public AliceO2::Common::Program
     uint32_t wrMed = 0x0badf00d;
     uint32_t wrHigh = 0x0000beef;
 
-    bar->writeRegister(sc_regs::SC_LINK.index, 0);
+    bar->writeRegister(sc_regs::SC_LINK, 0);
 
-    bar->writeRegister(sc_regs::SC_RESET.index, 0x1);
-    bar->writeRegister(sc_regs::SC_RESET.index, 0x0);
+    bar->writeRegister(sc_regs::SC_RESET, 0x1);
+    bar->writeRegister(sc_regs::SC_RESET, 0x0);
 
     // 4 * 32 + 9 * 32 * operations
     // 128 + 288 * operations
 
     for (int i = 0; i < times; i++) {
-      bar->writeRegister(sc_regs::SWT_WR_WORD_H.index, wrHigh);
-      bar->writeRegister(sc_regs::SWT_WR_WORD_M.index, wrMed);
-      bar->writeRegister(sc_regs::SWT_WR_WORD_L.index, wrLow);
+      bar->writeRegister(sc_regs::SWT_WR_WORD_H, wrHigh);
+      bar->writeRegister(sc_regs::SWT_WR_WORD_M, wrMed);
+      bar->writeRegister(sc_regs::SWT_WR_WORD_L, wrLow);
 
-      bar->readRegister(sc_regs::SWT_MON.index);
+      bar->readRegister(sc_regs::SWT_MON);
     }
 
     // ---
@@ -343,7 +347,7 @@ class LlaBench : public AliceO2::Common::Program
 
     uint32_t numWords = 0x0;
     while ((std::chrono::steady_clock::now() < timeOut) && (numWords < 1)) {
-      numWords = (bar->readRegister(sc_regs::SWT_MON.index) >> 16);
+      numWords = (bar->readRegister(sc_regs::SWT_MON) >> 16);
     }
 
     if (numWords < 1) {
@@ -351,12 +355,12 @@ class LlaBench : public AliceO2::Common::Program
     }
 
     for (int i = 0; i < (int)numWords; i++) {
-      bar->writeRegister(sc_regs::SWT_CMD.index, 0x2);
-      bar->writeRegister(sc_regs::SWT_CMD.index, 0x0);
+      bar->writeRegister(sc_regs::SWT_CMD, 0x2);
+      bar->writeRegister(sc_regs::SWT_CMD, 0x0);
 
-      uint32_t rdLow = bar->readRegister(sc_regs::SWT_RD_WORD_L.index);
-      uint32_t rdMed = bar->readRegister(sc_regs::SWT_RD_WORD_M.index);
-      uint32_t rdHigh = bar->readRegister(sc_regs::SWT_RD_WORD_H.index);
+      uint32_t rdLow = bar->readRegister(sc_regs::SWT_RD_WORD_L);
+      uint32_t rdMed = bar->readRegister(sc_regs::SWT_RD_WORD_M);
+      uint32_t rdHigh = bar->readRegister(sc_regs::SWT_RD_WORD_H);
 
       if (rdLow != wrLow || rdMed != wrMed || (rdHigh & 0xfff) != (wrHigh & 0xfff)) {
         std::cout << std::hex << rdLow << " " << wrLow << std::endl;
