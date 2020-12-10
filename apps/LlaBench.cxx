@@ -309,7 +309,7 @@ class LlaBench : public AliceO2::Common::Program
 
   void criticalSimple(std::shared_ptr<roc::BarInterface> bar, uint32_t wr)
   {
-    uint32_t regIndex = 0xc00 / 4;
+    uint32_t regIndex = roc::Cru::ScRegisters::SWT_WR_WORD_L;
     bar->writeRegister(regIndex, wr);
     uint32_t rd = bar->readRegister(regIndex);
     if (rd != wr) {
