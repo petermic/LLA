@@ -160,12 +160,12 @@ set_target_properties(LLA
     O2Lla # Adhere to O2 naming conventions
 )
 
-## Used for debugging purposes to expose more options for benchmarking
-#if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-#  add_compile_definitions(
-#    O2_LLA_BENCH_ENABLED
-#  )
-#endif()
+# Used for debugging purposes to expose more options for benchmarking
+if((CMAKE_BUILD_TYPE STREQUAL "Debug") AND (${CMAKE_VERSION} VERSION_GREATER 3.9))
+  add_compile_definitions(
+    O2_LLA_BENCH_ENABLED
+  )
+endif()
 
 
 # Use C++17
