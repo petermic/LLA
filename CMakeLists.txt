@@ -161,10 +161,16 @@ set_target_properties(LLA
 )
 
 # Used for debugging purposes to expose more options for benchmarking
-if((CMAKE_BUILD_TYPE STREQUAL "Debug") AND (${CMAKE_VERSION} VERSION_GREATER 3.9))
-  add_compile_definitions(
-    O2_LLA_BENCH_ENABLED
-  )
+if((CMAKE_BUILD_TYPE STREQUAL "Debug"))
+  if(${CMAKE_VERSION} VERSION_GREATER 3.9)
+    add_compile_definitions(
+      O2_LLA_BENCH_ENABLED
+    )
+  else()
+    add_definitions(
+      -DO2_LLA_BENCH_ENABLED
+    )
+  endif()
 endif()
 
 

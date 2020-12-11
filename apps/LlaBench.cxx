@@ -323,7 +323,7 @@ class LlaBench : public AliceO2::Common::Program
     namespace sc_regs = roc::Cru::ScRegisters;
     uint32_t wrLow = 0xcafecafe;
     uint32_t wrMed = 0x0badf00d;
-    uint32_t wrHigh = 0x0000beef;
+    //uint32_t wrHigh = 0x0000beef;
 
     bar->writeRegister(sc_regs::SC_LINK, 0);
 
@@ -362,9 +362,10 @@ class LlaBench : public AliceO2::Common::Program
 //      uint32_t rdMed = bar->readRegister(sc_regs::SWT_RD_WORD_M);
       uint32_t rdHigh = bar->readRegister(sc_regs::SWT_RD_WORD_H);
 
-      if (rdLow != wrLow || rdMed != wrMed || (rdHigh & 0xfff) != (wrHigh & 0xfff)) {
+//      if (rdLow != wrLow || rdMed != wrMed || (rdHigh & 0xfff) != (wrHigh & 0xfff)) {
+      if (rdLow != wrLow || (rdHigh & 0xfff) != (wrHigh & 0xfff)) {
         std::cout << std::hex << rdLow << " " << wrLow << std::endl;
-        std::cout << std::hex << rdMed << " " << wrMed << std::endl;
+//        std::cout << std::hex << rdMed << " " << wrMed << std::endl;
         std::cout << std::hex << rdHigh << " " << wrHigh << std::endl;
         BOOST_THROW_EXCEPTION(LlaException() << ErrorInfo::Message("Wrong SWT word read"));
       }
