@@ -322,8 +322,8 @@ class LlaBench : public AliceO2::Common::Program
   {
     namespace sc_regs = roc::Cru::ScRegisters;
     uint32_t wrLow = 0xcafecafe;
-    uint32_t wrMed = 0x0badf00d;
-    //uint32_t wrHigh = 0x0000beef;
+ //   uint32_t wrMed = 0x0badf00d;
+    uint32_t wrHigh = 0x0000beef;
 
     bar->writeRegister(sc_regs::SC_LINK, 0);
 
