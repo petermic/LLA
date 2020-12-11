@@ -60,14 +60,16 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 if(${CMAKE_VERSION} VERSION_LESS 3.10)
   # needed for PythonInterp
-  #set(CMAKE_PROGRAM_PATH "${PYTHON_ROOT}/bin")
-  set(CMAKE_PROGRAM_PATH "/usr/bin")
+  set(PYTHON_ROOT "/cvmfs/sft.cern.ch/lcg/releases/Python/2.7.16-e553a/x86_64-centos7-gcc8-opt/")
+  set(CMAKE_PROGRAM_PATH "${PYTHON_ROOT}/bin")
   # needed for PythonLibs
-  file(GLOB PYTHON_INCLUDE_DIR /usr/include/python*) 
+  file(GLOB PYTHON_INCLUDE_DIR ${PYTHON_ROOT}/include/python*) 
   set(PYTHON_INCLUDE_DIR ${PYTHON_INCLUDE_DIR} CACHE PATH "Python include directory" FORCE)
 
-  file(GLOB PYTHON_LIBRARY /usr/lib64/libpython?.?m.so)
+  file(GLOB PYTHON_LIBRARY ${PYTHON_ROOT}/lib/libpython?.?.so)
   set(PYTHON_LIBRARY ${PYTHON_LIBRARY} CACHE PATH "Python library" FORCE)
+  set(boost_python_component "python27")
+  find_package(PythonLibs)
 else()
   find_package(Python3 3.6 COMPONENTS Interpreter Development)
   if (Python3_FOUND)
@@ -147,6 +149,7 @@ set(LINK_LIBS
 target_link_libraries(LLA
   PUBLIC
     ${LINK_LIBS}
+    ${Boost_LIBRARIES} ${PYTHON_LIBRARIES}
   PRIVATE
     $<$<BOOL:${Python2_FOUND}>:Boost::python27>
     $<$<BOOL:${Python2_FOUND}>:Python2::Python>
