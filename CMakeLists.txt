@@ -13,11 +13,18 @@ else()
 endif()
 
 # Define project
-project(LLA
-  VERSION 0.0.2
-  DESCRIPTION "O2 LLA library"
-  LANGUAGES CXX
-)
+if(${CMAKE_VERSION} VERSION_GREATER 3.8.1)
+  project(LLA
+    VERSION 0.0.2
+    DESCRIPTION "O2 LLA library"
+    LANGUAGES CXX
+  )
+else()
+  project(LLA
+    VERSION 0.0.2
+    LANGUAGES CXX
+  )
+endif()
 
 # Documentation dir
 add_subdirectory(doc)
@@ -51,13 +58,37 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
-find_package(Python3 3.6 COMPONENTS Interpreter Development)
-if (Python3_FOUND)
-  set(boost_python_component "python${Python3_VERSION_MAJOR}${Python3_VERSION_MINOR}")
+if(${CMAKE_VERSION} VERSION_LESS 3.10)
+  # needed for PythonInterp
+  #set(CMAKE_PROGRAM_PATH "${PYTHON_ROOT}/bin")
+  set(CMAKE_PROGRAM_PATH "/usr/bin")
+  # needed for PythonLibs
+  file(GLOB PYTHON_INCLUDE_DIR /usr/include/python*) 
+  set(PYTHON_INCLUDE_DIR ${PYTHON_INCLUDE_DIR} CACHE PATH "Python include directory" FORCE)
+
+  file(GLOB PYTHON_LIBRARY /usr/lib64/libpython?.?m.so)
+  set(PYTHON_LIBRARY ${PYTHON_LIBRARY} CACHE PATH "Python library" FORCE)
 else()
-  message(WARNING "Python 3 was not found: falling back to Python 2")
-  find_package(Python2 2.7 COMPONENTS Development REQUIRED)
-  set(boost_python_component "python27")
+  find_package(Python3 3.6 COMPONENTS Interpreter Development)
+  if (Python3_FOUND)
+    set(boost_python_component "python${Python3_VERSION_MAJOR}${Python3_VERSION_MINOR}")
+  else()
+    message(WARNING "Python 3 was not found: falling back to Python 2")
+    find_package(Python2 2.7 COMPONENTS Development REQUIRED)
+    set(boost_python_component "python27")
+  endif()
+endif()
+
+set(felix_deps FlxCard drivers_rcc regmap)
+if(EXISTS $ENV{FELIX_ROOT})
+  message("-- Detecting FELIX installation at $ENV{FELIX_ROOT}.")
+  foreach(felix_dep ${felix_deps})
+    string(TOLOWER ${felix_dep} dep_loc)
+      include_directories($ENV{FELIX_ROOT}/${dep_loc})
+      link_directories($ENV{FELIX_ROOT}/$ENV{FELIX_ARCH}/${dep_loc})
+    endforeach(felix_dep)
+else()
+  message(FATAL_ERROR "-- Cannot find FELIX.")
 endif()
 
 find_package(FELIXwrapper REQUIRED)
@@ -100,6 +131,7 @@ target_include_directories(LLA
 
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${PYTHON_INCLUDE_DIR}
 )
 
 set(LINK_LIBS
@@ -128,11 +160,17 @@ set_target_properties(LLA
     O2Lla # Adhere to O2 naming conventions
 )
 
-## Used for debugging purposes to expose more options for benchmarking
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  add_compile_definitions(
-    O2_LLA_BENCH_ENABLED
-  )
+# Used for debugging purposes to expose more options for benchmarking
+if((CMAKE_BUILD_TYPE STREQUAL "Debug"))
+  if(${CMAKE_VERSION} VERSION_GREATER 3.9)
+    add_compile_definitions(
+      O2_LLA_BENCH_ENABLED
+    )
+  else()
+    add_definitions(
+      -DO2_LLA_BENCH_ENABLED
+    )
+  endif()
 endif()
 
 
