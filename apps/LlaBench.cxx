@@ -237,10 +237,10 @@ class LlaBench : public AliceO2::Common::Program
                                  .setSessionName(mOptions.sessionName)
                                  .setCardId(mOptions.cardId);
     std::unique_ptr<Session> session = std::make_unique<Session>(params, lockType); // Class constructor only availabe when O2_LLA_BENCH_ENABLED is defined
-    
+
     int id = cardIdFromString(mOptions.cardId);
     std::shared_ptr<roc::CardInterface> card = std::make_shared<roc::CardInterface>(id,0x0);
-    
+
     std::shared_ptr<roc::BarInterface> bar0, bar2;
     if (mOptions.simpleCritical) {
       bar0 = std::make_shared<roc::BarInterface>(card,2);
@@ -322,7 +322,7 @@ class LlaBench : public AliceO2::Common::Program
   {
     namespace sc_regs = roc::Cru::ScRegisters;
     uint32_t wrLow = 0xcafecafe;
- //   uint32_t wrMed = 0x0badf00d;
+    uint32_t wrMed = 0x0badf00d;
     uint32_t wrHigh = 0x0000beef;
 
     bar->writeRegister(sc_regs::SC_LINK, 0);
@@ -335,8 +335,11 @@ class LlaBench : public AliceO2::Common::Program
 
     for (int i = 0; i < times; i++) {
       bar->writeRegister(sc_regs::SWT_WR_WORD_H, wrHigh);
-//      bar->writeRegister(sc_regs::SWT_WR_WORD_M, wrMed);
+      bar->writeRegister(sc_regs::SWT_WR_WORD_M, wrMed);
       bar->writeRegister(sc_regs::SWT_WR_WORD_L, wrLow);
+
+      bar->writeRegister(sc_regs::SWT_CMD, 0x1);
+      bar->writeRegister(sc_regs::SWT_CMD, 0x0);
 
       bar->readRegister(sc_regs::SWT_MON);
     }
@@ -359,13 +362,12 @@ class LlaBench : public AliceO2::Common::Program
       bar->writeRegister(sc_regs::SWT_CMD, 0x0);
 
       uint32_t rdLow = bar->readRegister(sc_regs::SWT_RD_WORD_L);
-//      uint32_t rdMed = bar->readRegister(sc_regs::SWT_RD_WORD_M);
+      uint32_t rdMed = bar->readRegister(sc_regs::SWT_RD_WORD_M);
       uint32_t rdHigh = bar->readRegister(sc_regs::SWT_RD_WORD_H);
 
-//      if (rdLow != wrLow || rdMed != wrMed || (rdHigh & 0xfff) != (wrHigh & 0xfff)) {
-      if (rdLow != wrLow || (rdHigh & 0xfff) != (wrHigh & 0xfff)) {
+      if (rdLow != wrLow || rdMed != wrMed || (rdHigh & 0xfff) != (wrHigh & 0xfff)) {
         std::cout << std::hex << rdLow << " " << wrLow << std::endl;
-//        std::cout << std::hex << rdMed << " " << wrMed << std::endl;
+        std::cout << std::hex << rdMed << " " << wrMed << std::endl;
         std::cout << std::hex << rdHigh << " " << wrHigh << std::endl;
         BOOST_THROW_EXCEPTION(LlaException() << ErrorInfo::Message("Wrong SWT word read"));
       }
